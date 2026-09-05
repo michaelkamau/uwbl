@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+obj-m += uniwill-laptop.o
+uniwill-laptop-y := uniwill-acpi.o uniwill-wmi.o
+
+# Newer LED cores validate multi_intensity against mc_subled.max_intensity.
+ccflags-y += $(shell grep -q max_intensity $(srctree)/include/linux/led-class-multicolor.h && echo -DUW_HAVE_MC_MAX_INTENSITY)
+# Newer WMI cores validate the minimum event payload size in the driver core.
+ccflags-y += $(shell grep -q min_event_size $(srctree)/include/linux/wmi.h && echo -DUW_HAVE_WMI_MIN_EVENT_SIZE)

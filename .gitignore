@@ -1,0 +1,14 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Windows reference binaries (kept locally, not committed)
+reference/**/*.exe
+reference/**/*.dll
+reference/**/*.sys
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
