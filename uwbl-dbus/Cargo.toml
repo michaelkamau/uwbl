@@ -1,0 +1,13 @@
+[package]
+name = "uwbl-dbus"
+description = "D-Bus interface definition and client proxy for uwbld"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+uwbl-core.workspace = true
+zbus.workspace = true
+serde_json.workspace = true

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["uwbl-core", "uwbld", "uwbl", "uwbl-tray"]
+members = ["uwbl-core", "uwbl-dbus", "uwbld", "uwbl", "uwbl-tray"]
 
 [workspace.package]
 version = "0.1.0"
@@ -11,6 +11,7 @@ authors = ["Michael Kamau"]
 
 [workspace.dependencies]
 uwbl-core = { path = "uwbl-core" }
+uwbl-dbus = { path = "uwbl-dbus" }
 anyhow = "1"
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }

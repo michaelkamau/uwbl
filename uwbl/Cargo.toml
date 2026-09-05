@@ -1,6 +1,18 @@
 [package]
 name = "uwbl"
-version = "0.1.0"
-edition = "2024"
+description = "CLI for the uwbld keyboard backlight daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
 
 [dependencies]
+uwbl-core.workspace = true
+uwbl-dbus.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+tokio.workspace = true
+zbus.workspace = true
+futures-util.workspace = true
