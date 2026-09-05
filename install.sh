@@ -22,10 +22,12 @@ if [[ $SKIP_BUILD == 0 ]]; then
     log "building release binaries"
     # Build as the invoking user so ~/.cargo is used and target/ is not root-owned.
     BUILD_USER=${SUDO_USER:-root}
+    # `sudo -u` gives a non-login shell without ~/.cargo/bin on PATH; add it explicitly.
+    BUILD_CMD='export PATH="$HOME/.cargo/bin:$PATH"; command -v cargo >/dev/null || { echo "cargo not found for $(id -un); install Rust from https://rustup.rs" >&2; exit 1; }; cargo build --release --workspace'
     if [[ $BUILD_USER != root ]]; then
-        sudo -u "$BUILD_USER" -H bash -c "cd '$HERE' && cargo build --release --workspace"
+        sudo -u "$BUILD_USER" -H bash -c "cd '$HERE' && $BUILD_CMD"
     else
-        (cd "$HERE" && cargo build --release --workspace)
+        (cd "$HERE" && bash -c "$BUILD_CMD")
     fi
 fi
 for bin in uwbld uwbl uwbl-tray; do
