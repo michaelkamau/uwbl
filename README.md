@@ -6,6 +6,9 @@ backlight (colour, 4 brightness levels, effects) and the fan mode (Gaming /
 Beast, fan boost). It should also work on other Uniwill/Tongfang GK7NXXR boards
 that use the same embedded controller.
 
+
+![ubwl-tray](images/keyboard-tray.png)
+
 ```
 ┌────────────┐  D-Bus (system)  ┌──────────┐  sysfs LED / platform_profile  ┌──────────────────┐
 │ uwbl (CLI) │─────────────────▶│  uwbld   │───────────────────────────────▶│ uniwill-laptop.ko│─▶ EC
