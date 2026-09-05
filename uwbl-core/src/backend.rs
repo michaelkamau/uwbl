@@ -106,7 +106,9 @@ pub trait Backend: Send {
 
 fn clamp_intensity(rgb: [u8; 3]) -> Result<[u8; 3]> {
     if rgb.iter().any(|&c| c > MAX_INTENSITY) {
-        return Err(Error::Invalid(format!("intensity {rgb:?} exceeds {MAX_INTENSITY}")));
+        return Err(Error::Invalid(format!(
+            "intensity {rgb:?} exceeds {MAX_INTENSITY}"
+        )));
     }
     Ok(if rgb == [0, 0, 0] { [1, 1, 1] } else { rgb })
 }
@@ -202,7 +204,8 @@ impl SysfsBackend {
 /// Only take over `platform_profile` if the LED device belongs to the uniwill driver, otherwise
 /// we might fight with another vendor driver (e.g. on a ThinkPad).
 fn platform_profile_is_uniwill(pp: &Path, led_dir: &Path) -> bool {
-    let choices = fs::read_to_string(pp.with_file_name("platform_profile_choices")).unwrap_or_default();
+    let choices =
+        fs::read_to_string(pp.with_file_name("platform_profile_choices")).unwrap_or_default();
     if !choices.contains("balanced") || !choices.contains("performance") {
         return false;
     }
@@ -234,10 +237,14 @@ fn read_u32(path: &Path) -> Result<u32> {
 }
 
 fn write_string(path: &Path, value: &str) -> Result<()> {
-    let mut f = fs::OpenOptions::new().write(true).truncate(true).open(path).map_err(|e| Error::Io {
-        path: path.display().to_string(),
-        source: e,
-    })?;
+    let mut f = fs::OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(path)
+        .map_err(|e| Error::Io {
+            path: path.display().to_string(),
+            source: e,
+        })?;
     f.write_all(value.as_bytes()).map_err(|e| Error::Io {
         path: path.display().to_string(),
         source: e,
@@ -269,7 +276,10 @@ impl Backend for SysfsBackend {
         }
         let path = self.led_dir.join("multi_intensity");
         let s = read_string(&path)?;
-        let parts: Vec<u8> = s.split_whitespace().filter_map(|p| p.parse().ok()).collect();
+        let parts: Vec<u8> = s
+            .split_whitespace()
+            .filter_map(|p| p.parse().ok())
+            .collect();
         if parts.len() != 3 {
             return Err(Error::Parse {
                 path: path.display().to_string(),
@@ -291,7 +301,9 @@ impl Backend for SysfsBackend {
     }
 
     fn take_hw_brightness_change(&mut self) -> Result<Option<u8>> {
-        let Some(p) = &self.hw_changed else { return Ok(None) };
+        let Some(p) = &self.hw_changed else {
+            return Ok(None);
+        };
         let s = read_string(p)?;
         if self.last_hw_changed.as_deref() == Some(s.as_str()) {
             return Ok(None);
@@ -397,7 +409,9 @@ impl Backend for FakeBackend {
     }
     fn set_brightness(&mut self, level: u8) -> Result<()> {
         if level > MAX_BRIGHTNESS {
-            return Err(Error::Invalid(format!("brightness {level} > {MAX_BRIGHTNESS}")));
+            return Err(Error::Invalid(format!(
+                "brightness {level} > {MAX_BRIGHTNESS}"
+            )));
         }
         let mut s = self.state.lock().unwrap();
         s.brightness = level;
@@ -458,7 +472,11 @@ mod tests {
         let acpi = dir.join("sys/firmware/acpi");
         fs::create_dir_all(&acpi).unwrap();
         fs::write(acpi.join("platform_profile"), "balanced\n").unwrap();
-        fs::write(acpi.join("platform_profile_choices"), "balanced performance\n").unwrap();
+        fs::write(
+            acpi.join("platform_profile_choices"),
+            "balanced performance\n",
+        )
+        .unwrap();
         led
     }
 
@@ -473,7 +491,10 @@ mod tests {
         b.set_brightness(4).unwrap();
         b.set_intensity([0, 0, 0]).unwrap();
         assert_eq!(fs::read_to_string(led.join("brightness")).unwrap(), "4");
-        assert_eq!(fs::read_to_string(led.join("multi_intensity")).unwrap(), "1 1 1");
+        assert_eq!(
+            fs::read_to_string(led.join("multi_intensity")).unwrap(),
+            "1 1 1"
+        );
         assert!(b.set_brightness(5).is_err());
         assert!(b.set_intensity([51, 0, 0]).is_err());
 
@@ -505,7 +526,10 @@ mod tests {
     fn missing_led() {
         let tmp = tempfile::tempdir().unwrap();
         fs::create_dir_all(tmp.path().join("sys/class/leds")).unwrap();
-        assert!(matches!(SysfsBackend::discover(tmp.path()), Err(Error::LedNotFound(_))));
+        assert!(matches!(
+            SysfsBackend::discover(tmp.path()),
+            Err(Error::LedNotFound(_))
+        ));
     }
 
     #[test]

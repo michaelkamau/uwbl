@@ -6,7 +6,10 @@ use futures_util::StreamExt;
 use uwbl_core::{PowerSource, Profile, Status};
 
 #[derive(Parser, Debug)]
-#[command(version, about = "Control the Uniwill/Eluktronics keyboard backlight and fan mode")]
+#[command(
+    version,
+    about = "Control the Uniwill/Eluktronics keyboard backlight and fan mode"
+)]
 struct Cli {
     /// Machine-readable JSON output.
     #[arg(long, global = true)]
@@ -139,10 +142,13 @@ async fn main() -> Result<()> {
                 let s = proxy.status().await?;
                 let src: PowerSource = source.parse()?;
                 let mut base = serde_json::to_value(s.profiles.get(src))?;
-                let patch: serde_json::Value = serde_json::from_str(&patch).context("invalid JSON")?;
+                let patch: serde_json::Value =
+                    serde_json::from_str(&patch).context("invalid JSON")?;
                 merge(&mut base, patch);
                 let profile: Profile = serde_json::from_value(base)?;
-                proxy.set_profile(&source, &serde_json::to_string(&profile)?).await?
+                proxy
+                    .set_profile(&source, &serde_json::to_string(&profile)?)
+                    .await?
             }
         },
         Cmd::Reset => proxy.reset_to_config().await?,
@@ -204,7 +210,11 @@ fn print_status(s: &Status, json: bool) {
     };
     println!("backlight:   {state}");
     println!("color:       {}", s.color);
-    let speed = if s.effect.is_animated() { format!(" (speed {})", s.speed) } else { String::new() };
+    let speed = if s.effect.is_animated() {
+        format!(" (speed {})", s.speed)
+    } else {
+        String::new()
+    };
     println!("effect:      {}{speed}", s.effect);
     match s.fan_mode {
         Some(m) => println!("fan mode:    {m} ({})", m.windows_name()),
@@ -224,10 +234,17 @@ fn print_profile(name: &str, p: &Profile) {
     println!("  color:      {}", p.effect.color);
     println!(
         "  cycle:      {}",
-        p.effect.colors.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(", ")
+        p.effect
+            .colors
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
     );
     println!(
         "  fan mode:   {}",
-        p.fan_mode.map(|m| m.to_string()).unwrap_or_else(|| "(unchanged)".into())
+        p.fan_mode
+            .map(|m| m.to_string())
+            .unwrap_or_else(|| "(unchanged)".into())
     );
 }

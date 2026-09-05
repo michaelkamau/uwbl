@@ -1,0 +1,49 @@
+# uwbld configuration. Values here are the defaults; runtime changes made through
+# `uwbl` or the tray are stored separately in /var/lib/uwbld/state.toml.
+# Colours accept "#rrggbb", "r,g,b" or preset names (red, orange, yellow, green,
+# blue, cyan, violet, white, ...). Effects: static, breathing, cycle, rainbow.
+# Fan modes: balanced (Gaming) or performance (Beast).
+
+[general]
+idle_off_secs = 0
+restore_on_resume = true
+follow_hw_brightness = true
+fake_backend = false
+sysfs_root = "/"
+
+[profiles.ac]
+enabled = true
+brightness = 3
+fan_mode = "balanced"
+
+[profiles.ac.effect]
+kind = "static"
+color = "#0000ff"
+speed = 5
+colors = [
+    "#ff0000",
+    "#ffa500",
+    "#ffff00",
+    "#00ff00",
+    "#0000ff",
+    "#00ffff",
+    "#8b00ff",
+]
+
+[profiles.battery]
+enabled = false
+brightness = 2
+
+[profiles.battery.effect]
+kind = "static"
+color = "#ffffff"
+speed = 5
+colors = [
+    "#ff0000",
+    "#ffa500",
+    "#ffff00",
+    "#00ff00",
+    "#0000ff",
+    "#00ffff",
+    "#8b00ff",
+]

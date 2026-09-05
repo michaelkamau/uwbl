@@ -74,7 +74,10 @@ impl ksni::Tray for Tray {
             Some(_) => Rgb::new(70, 70, 70),
             None => Rgb::new(40, 40, 40),
         };
-        [22, 32, 48].into_iter().map(|size| swatch_icon(size, color)).collect()
+        [22, 32, 48]
+            .into_iter()
+            .map(|size| swatch_icon(size, color))
+            .collect()
     }
 
     fn tool_tip(&self) -> ToolTip {
@@ -138,7 +141,11 @@ impl ksni::Tray for Tray {
             select: Box::new(|t: &mut Self, i| t.send(Cmd::Brightness(i as u8))),
             options: (0..=s.max_brightness)
                 .map(|l| RadioItem {
-                    label: if l == 0 { "Off".into() } else { format!("Level {l}") },
+                    label: if l == 0 {
+                        "Off".into()
+                    } else {
+                        format!("Level {l}")
+                    },
                     ..Default::default()
                 })
                 .collect(),
@@ -171,7 +178,10 @@ impl ksni::Tray for Tray {
             label: format!("Effect: {}", s.effect),
             icon_name: "view-refresh".into(),
             submenu: vec![RadioGroup {
-                selected: EffectKind::ALL.iter().position(|k| *k == s.effect).unwrap_or(0),
+                selected: EffectKind::ALL
+                    .iter()
+                    .position(|k| *k == s.effect)
+                    .unwrap_or(0),
                 select: Box::new(|t: &mut Self, i| t.send(Cmd::Effect(EffectKind::ALL[i]))),
                 options: EffectKind::ALL
                     .iter()
@@ -189,7 +199,10 @@ impl ksni::Tray for Tray {
             label: format!("Speed: {}", s.speed),
             enabled: s.effect.is_animated(),
             submenu: vec![RadioGroup {
-                selected: SPEEDS.iter().position(|v| *v == s.speed).unwrap_or(usize::MAX),
+                selected: SPEEDS
+                    .iter()
+                    .position(|v| *v == s.speed)
+                    .unwrap_or(usize::MAX),
                 select: Box::new(|t: &mut Self, i| t.send(Cmd::Speed(SPEEDS[i]))),
                 options: SPEEDS
                     .iter()
@@ -227,7 +240,11 @@ impl ksni::Tray for Tray {
                     submenu: vec![RadioGroup {
                         selected: if mode == FanMode::Balanced { 0 } else { 1 },
                         select: Box::new(|t: &mut Self, i| {
-                            t.send(Cmd::FanMode(if i == 0 { FanMode::Balanced } else { FanMode::Performance }))
+                            t.send(Cmd::FanMode(if i == 0 {
+                                FanMode::Balanced
+                            } else {
+                                FanMode::Performance
+                            }))
                         }),
                         options: vec![
                             RadioItem {
@@ -345,10 +362,12 @@ async fn run_commands(mut rx: mpsc::UnboundedReceiver<Cmd>, proxy: BacklightProx
             Cmd::Speed(v) => proxy.set_speed(v).await,
             Cmd::FanMode(m) => proxy.set_fan_mode(m.as_profile()).await,
             Cmd::FanBoost(b) => proxy.set_fan_boost(b).await,
-            Cmd::CopyAcToBattery => match proxy.status().await.and_then(|s| to_json(&s.profiles.ac)) {
-                Ok(json) => proxy.set_profile("battery", &json).await,
-                Err(e) => Err(e),
-            },
+            Cmd::CopyAcToBattery => {
+                match proxy.status().await.and_then(|s| to_json(&s.profiles.ac)) {
+                    Ok(json) => proxy.set_profile("battery", &json).await,
+                    Err(e) => Err(e),
+                }
+            }
             Cmd::Reset => proxy.reset_to_config().await,
             Cmd::Quit => std::process::exit(0),
         };

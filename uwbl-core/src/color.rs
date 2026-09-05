@@ -123,7 +123,11 @@ impl FromStr for Rgb {
         }
         Err(Error::Invalid(format!(
             "cannot parse colour {s:?}; use #rrggbb, r,g,b or one of: {}",
-            PRESETS.iter().map(|(n, _)| *n).collect::<Vec<_>>().join(", ")
+            PRESETS
+                .iter()
+                .map(|(n, _)| *n)
+                .collect::<Vec<_>>()
+                .join(", ")
         )))
     }
 }
@@ -190,8 +194,13 @@ mod tests {
     #[test]
     fn serde_hex() {
         #[derive(Serialize, Deserialize)]
-        struct W { c: Rgb }
-        let t = toml::to_string(&W { c: Rgb::new(255, 0, 16) }).unwrap();
+        struct W {
+            c: Rgb,
+        }
+        let t = toml::to_string(&W {
+            c: Rgb::new(255, 0, 16),
+        })
+        .unwrap();
         assert_eq!(t.trim(), r##"c = "#ff0010""##);
         let w: W = toml::from_str(r#"c = "blue""#).unwrap();
         assert_eq!(w.c, Rgb::new(0, 0, 255));

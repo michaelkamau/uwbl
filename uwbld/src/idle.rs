@@ -52,7 +52,9 @@ fn set_idle(shared: &Shared, off: bool) {
 }
 
 fn spawn_readers(shared: &Arc<Shared>, watched: &Arc<Mutex<HashSet<PathBuf>>>) {
-    let Ok(dir) = std::fs::read_dir("/dev/input") else { return };
+    let Ok(dir) = std::fs::read_dir("/dev/input") else {
+        return;
+    };
     for entry in dir.flatten() {
         let path = entry.path();
         let is_event = path
@@ -85,7 +87,9 @@ async fn read_device(shared: Arc<Shared>, path: PathBuf, watched: Arc<Mutex<Hash
                 return;
             }
             Ok(_) => {
-                shared.last_activity.store(shared.now_ms(), Ordering::Relaxed);
+                shared
+                    .last_activity
+                    .store(shared.now_ms(), Ordering::Relaxed);
                 shared.activity.notify_one();
             }
         }

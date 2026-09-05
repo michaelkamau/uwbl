@@ -42,7 +42,9 @@ impl std::str::FromStr for PowerSource {
         match s.trim().to_ascii_lowercase().as_str() {
             "ac" | "mains" | "plugged" => Ok(PowerSource::Ac),
             "battery" | "bat" | "dc" => Ok(PowerSource::Battery),
-            o => Err(Error::Invalid(format!("unknown power source {o:?}; expected ac|battery"))),
+            o => Err(Error::Invalid(format!(
+                "unknown power source {o:?}; expected ac|battery"
+            ))),
         }
     }
 }
@@ -94,11 +96,75 @@ impl Profile {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+/// Both profiles. Deserialisation merges partial tables onto the per-source defaults, so
+/// `[profiles.battery.effect] color = "red"` keeps the battery profile *disabled* as documented
+/// instead of silently falling back to the generic `Profile::default()`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Profiles {
     pub ac: Profile,
     pub battery: Profile,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct EffectPatch {
+    kind: Option<crate::effect::EffectKind>,
+    color: Option<Rgb>,
+    speed: Option<u8>,
+    colors: Option<Vec<Rgb>>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct ProfilePatch {
+    enabled: Option<bool>,
+    brightness: Option<u8>,
+    effect: EffectPatch,
+    /// `Some(None)` cannot be expressed in TOML; absent = keep default.
+    fan_mode: Option<FanMode>,
+}
+
+impl ProfilePatch {
+    fn apply(self, mut base: Profile) -> Profile {
+        if let Some(v) = self.enabled {
+            base.enabled = v;
+        }
+        if let Some(v) = self.brightness {
+            base.brightness = v;
+        }
+        if let Some(v) = self.effect.kind {
+            base.effect.kind = v;
+        }
+        if let Some(v) = self.effect.color {
+            base.effect.color = v;
+        }
+        if let Some(v) = self.effect.speed {
+            base.effect.speed = v;
+        }
+        if let Some(v) = self.effect.colors {
+            base.effect.colors = v;
+        }
+        if self.fan_mode.is_some() {
+            base.fan_mode = self.fan_mode;
+        }
+        base
+    }
+}
+
+impl<'de> Deserialize<'de> for Profiles {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        #[derive(Deserialize, Default)]
+        #[serde(default)]
+        struct Patch {
+            ac: ProfilePatch,
+            battery: ProfilePatch,
+        }
+        let p = Patch::deserialize(d)?;
+        Ok(Profiles {
+            ac: p.ac.apply(Profile::default_for(PowerSource::Ac)),
+            battery: p.battery.apply(Profile::default_for(PowerSource::Battery)),
+        })
+    }
 }
 
 impl Default for Profiles {
@@ -255,6 +321,8 @@ mod tests {
             kind = "rainbow"
             color = "cyan"
             speed = 8
+            [profiles.battery.effect]
+            color = "red"
             "#,
         )
         .unwrap();
@@ -265,6 +333,8 @@ mod tests {
         assert_eq!(c.profiles.ac.effect.color, Rgb::new(0, 255, 255));
         assert_eq!(c.profiles.ac.effect.colors.len(), 7);
         assert!(!c.profiles.battery.enabled);
+        assert_eq!(c.profiles.battery.effect.color, Rgb::new(255, 0, 0));
+        assert_eq!(c.profiles.battery.effect.kind, EffectKind::Static);
     }
 
     #[test]
@@ -289,6 +359,9 @@ mod tests {
         let c = Config::default();
         c.save(&path).unwrap();
         assert_eq!(Config::load(&path).unwrap(), c);
-        assert_eq!(Config::load_or_default(tmp.path().join("nope.toml")).unwrap(), c);
+        assert_eq!(
+            Config::load_or_default(tmp.path().join("nope.toml")).unwrap(),
+            c
+        );
     }
 }

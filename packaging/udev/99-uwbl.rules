@@ -1,0 +1,2 @@
+# Start uwbld as soon as the uniwill keyboard backlight LED appears (module may load late).
+ACTION=="add", SUBSYSTEM=="leds", KERNEL=="*kbd_backlight*", TAG+="systemd", ENV{SYSTEMD_WANTS}+="uwbld.service"

@@ -77,7 +77,8 @@ impl BacklightProxy<'_> {
     /// Convenience: fetch and decode the status.
     pub async fn status(&self) -> zbus::Result<Status> {
         let json = self.get_status().await?;
-        serde_json::from_str(&json).map_err(|e| zbus::Error::Failure(format!("bad status JSON: {e}")))
+        serde_json::from_str(&json)
+            .map_err(|e| zbus::Error::Failure(format!("bad status JSON: {e}")))
     }
 }
 

@@ -26,7 +26,12 @@ pub struct Controller {
 }
 
 impl Controller {
-    pub fn new(backend: Box<dyn Backend>, config: Config, state: Option<State>, power: PowerSource) -> Self {
+    pub fn new(
+        backend: Box<dyn Backend>,
+        config: Config,
+        state: Option<State>,
+        power: PowerSource,
+    ) -> Self {
         let (profiles, fan_boost) = match state {
             Some(s) => (s.profiles, s.fan_boost),
             None => (config.profiles.clone(), false),
@@ -79,7 +84,12 @@ impl Controller {
         let profile = self.profile().clone();
         info!(
             "applying {} profile: enabled={} brightness={} effect={} color={} fan={:?}",
-            self.power, profile.enabled, profile.brightness, profile.effect.kind, profile.effect.color, profile.fan_mode
+            self.power,
+            profile.enabled,
+            profile.brightness,
+            profile.effect.kind,
+            profile.effect.color,
+            profile.fan_mode
         );
         self.restart_engine(profile.effect.clone());
         self.apply_brightness()?;
@@ -108,7 +118,11 @@ impl Controller {
     }
 
     fn apply_brightness(&mut self) -> Result<()> {
-        let level = if self.idle_off { 0 } else { self.profile().effective_brightness() };
+        let level = if self.idle_off {
+            0
+        } else {
+            self.profile().effective_brightness()
+        };
         let level = level.min(self.backend.max_brightness());
         self.backend.set_brightness(level)
     }
@@ -264,7 +278,9 @@ impl Controller {
 
     pub fn set_cycle_colors(&mut self, colors: Vec<Rgb>) -> Result<()> {
         if colors.is_empty() {
-            return Err(crate::Error::Invalid("cycle needs at least one colour".into()));
+            return Err(crate::Error::Invalid(
+                "cycle needs at least one colour".into(),
+            ));
         }
         let p = self.profiles.get_mut(self.power);
         p.effect.colors = colors;
@@ -377,7 +393,10 @@ mod tests {
         assert!(!c.is_dirty());
         assert_eq!(st.profiles.ac.brightness, 1);
         assert_eq!(st.profiles.ac.effect.color, Rgb::new(255, 0, 0));
-        assert_eq!(st.profiles.battery, Profile::default_for(PowerSource::Battery));
+        assert_eq!(
+            st.profiles.battery,
+            Profile::default_for(PowerSource::Battery)
+        );
     }
 
     #[test]
@@ -447,7 +466,12 @@ mod tests {
         let fake = FakeBackend::new();
         let mut st = State::default();
         st.profiles.ac.brightness = 4;
-        let mut c = Controller::new(Box::new(fake.clone()), Config::default(), Some(st), PowerSource::Ac);
+        let mut c = Controller::new(
+            Box::new(fake.clone()),
+            Config::default(),
+            Some(st),
+            PowerSource::Ac,
+        );
         c.apply_all().unwrap();
         assert_eq!(fake.snapshot().brightness, 4);
         c.reset_to_config().unwrap();

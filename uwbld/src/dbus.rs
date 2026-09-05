@@ -38,7 +38,10 @@ impl Backlight {
     }
 
     /// Run a mutation under the controller lock, then wake the effect loop / emitter.
-    fn mutate(&self, f: impl FnOnce(&mut uwbl_core::Controller) -> uwbl_core::Result<()>) -> fdo::Result<()> {
+    fn mutate(
+        &self,
+        f: impl FnOnce(&mut uwbl_core::Controller) -> uwbl_core::Result<()>,
+    ) -> fdo::Result<()> {
         {
             let mut ctl = self.shared.ctl.lock().unwrap();
             f(&mut ctl).map_err(failed)?;
@@ -91,7 +94,12 @@ impl Backlight {
         self.mutate(|c| c.set_color(rgb))
     }
 
-    async fn set_effect(&self, #[zbus(header)] hdr: Header<'_>, effect: &str, speed: u8) -> fdo::Result<()> {
+    async fn set_effect(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        effect: &str,
+        speed: u8,
+    ) -> fdo::Result<()> {
         self.authorize(&hdr).await?;
         let kind: EffectKind = effect.parse().map_err(invalid)?;
         let speed = (speed != 0).then_some(speed);
@@ -106,7 +114,11 @@ impl Backlight {
         self.mutate(|c| c.set_speed(speed))
     }
 
-    async fn set_cycle_colors(&self, #[zbus(header)] hdr: Header<'_>, colors: Vec<String>) -> fdo::Result<()> {
+    async fn set_cycle_colors(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        colors: Vec<String>,
+    ) -> fdo::Result<()> {
         self.authorize(&hdr).await?;
         let parsed: Result<Vec<Rgb>, _> = colors.iter().map(|c| c.parse()).collect();
         let parsed = parsed.map_err(invalid)?;
@@ -124,7 +136,12 @@ impl Backlight {
         self.mutate(|c| c.set_fan_boost(on))
     }
 
-    async fn set_profile(&self, #[zbus(header)] hdr: Header<'_>, source: &str, profile_json: &str) -> fdo::Result<()> {
+    async fn set_profile(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        source: &str,
+        profile_json: &str,
+    ) -> fdo::Result<()> {
         self.authorize(&hdr).await?;
         let source: PowerSource = source.parse().map_err(invalid)?;
         let profile: Profile = serde_json::from_str(profile_json).map_err(invalid)?;
@@ -142,7 +159,8 @@ impl Backlight {
     }
 
     #[zbus(signal)]
-    pub async fn status_changed(emitter: &SignalEmitter<'_>, status_json: &str) -> zbus::Result<()>;
+    pub async fn status_changed(emitter: &SignalEmitter<'_>, status_json: &str)
+        -> zbus::Result<()>;
 
     #[zbus(property)]
     fn enabled(&self) -> bool {
@@ -166,7 +184,10 @@ impl Backlight {
     }
     #[zbus(property)]
     fn fan_mode(&self) -> String {
-        self.status().fan_mode.map(|m| m.to_string()).unwrap_or_default()
+        self.status()
+            .fan_mode
+            .map(|m| m.to_string())
+            .unwrap_or_default()
     }
     #[zbus(property)]
     fn fan_boost(&self) -> bool {
@@ -191,11 +212,22 @@ pub async fn serve(shared: Arc<Shared>, session_bus: bool) -> Result<Connection>
     // The interface needs the connection for polkit; build the connection first, then attach.
     let conn = builder.build().await.context("connecting to D-Bus")?;
     conn.object_server()
-        .at(uwbl_dbus::OBJECT_PATH, Backlight { shared, conn: conn.clone() })
+        .at(
+            uwbl_dbus::OBJECT_PATH,
+            Backlight {
+                shared,
+                conn: conn.clone(),
+            },
+        )
         .await?;
     conn.request_name(uwbl_dbus::BUS_NAME)
         .await
-        .with_context(|| format!("requesting bus name {} (check the D-Bus policy file)", uwbl_dbus::BUS_NAME))?;
+        .with_context(|| {
+            format!(
+                "requesting bus name {} (check the D-Bus policy file)",
+                uwbl_dbus::BUS_NAME
+            )
+        })?;
     Ok(conn)
 }
 

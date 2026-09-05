@@ -34,7 +34,9 @@ pub async fn watch(shared: Arc<Shared>, sysfs_root: String) {
     let mut interval = tokio::time::interval(Duration::from_secs(2));
     loop {
         interval.tick().await;
-        let Some(power) = detect(&sysfs_root) else { continue };
+        let Some(power) = detect(&sysfs_root) else {
+            continue;
+        };
         let changed = {
             let mut ctl = shared.ctl.lock().unwrap();
             if ctl.power_source() == power {

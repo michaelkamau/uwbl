@@ -79,6 +79,7 @@ impl FromStr for EffectKind {
 
 /// Complete description of what the keyboard should show while on.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Effect {
     pub kind: EffectKind,
     /// Base colour for static / breathing.
@@ -86,7 +87,6 @@ pub struct Effect {
     /// 1 (slow) ..= 10 (fast).
     pub speed: u8,
     /// Colours for [`EffectKind::Cycle`]; defaults to the seven Control Center presets.
-    #[serde(default = "default_cycle_colors")]
     pub colors: Vec<Rgb>,
 }
 
@@ -300,7 +300,10 @@ mod tests {
 
     #[test]
     fn effect_kind_parse() {
-        assert_eq!("Monochrome".parse::<EffectKind>().unwrap(), EffectKind::Static);
+        assert_eq!(
+            "Monochrome".parse::<EffectKind>().unwrap(),
+            EffectKind::Static
+        );
         assert_eq!("manual".parse::<EffectKind>().unwrap(), EffectKind::Cycle);
         assert!("disco".parse::<EffectKind>().is_err());
     }

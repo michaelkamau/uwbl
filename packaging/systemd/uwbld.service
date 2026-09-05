@@ -1,0 +1,35 @@
+[Unit]
+Description=Uniwill/Eluktronics keyboard backlight and fan mode daemon
+Documentation=https://github.com/michaelkamau/backlight-driver
+After=systemd-modules-load.service dbus.service
+Wants=dbus.service
+# Wait until the kernel module has created the LED (udev rule triggers this unit too).
+ConditionPathExistsGlob=/sys/class/leds/*kbd_backlight*
+
+[Service]
+Type=dbus
+BusName=org.uniwill.Backlight1
+ExecStart=/usr/bin/uwbld
+Restart=on-failure
+RestartSec=2
+Environment=RUST_LOG=info
+StateDirectory=uwbld
+ConfigurationDirectory=uwbl
+
+# Hardening: root is required for sysfs writes and /dev/input, but little else.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+DeviceAllow=char-input r
+DevicePolicy=closed
+
+[Install]
+WantedBy=multi-user.target

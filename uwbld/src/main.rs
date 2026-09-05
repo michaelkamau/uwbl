@@ -81,7 +81,10 @@ async fn main() -> Result<()> {
     let state = match State::load(&args.state) {
         Ok(s) => s,
         Err(e) => {
-            warn!("ignoring unreadable state file {}: {e}", args.state.display());
+            warn!(
+                "ignoring unreadable state file {}: {e}",
+                args.state.display()
+            );
             None
         }
     };
@@ -118,7 +121,11 @@ async fn main() -> Result<()> {
     let conn = dbus::serve(shared.clone(), args.session_bus).await?;
     info!(
         "listening on {} as {}",
-        if args.session_bus { "session bus" } else { "system bus" },
+        if args.session_bus {
+            "session bus"
+        } else {
+            "system bus"
+        },
         uwbl_dbus::BUS_NAME
     );
 
@@ -126,9 +133,16 @@ async fn main() -> Result<()> {
     tokio::spawn(hw_brightness_poll(shared.clone()));
     tokio::spawn(power::watch(shared.clone(), sysfs_root));
     tokio::spawn(dbus::watch_sleep(shared.clone(), conn.clone()));
-    tokio::spawn(dbus::emit_changes(shared.clone(), conn.clone(), args.state.clone()));
+    tokio::spawn(dbus::emit_changes(
+        shared.clone(),
+        conn.clone(),
+        args.state.clone(),
+    ));
     if idle_secs > 0 {
-        tokio::spawn(idle::run(shared.clone(), Duration::from_secs(idle_secs as u64)));
+        tokio::spawn(idle::run(
+            shared.clone(),
+            Duration::from_secs(idle_secs as u64),
+        ));
     }
 
     wait_for_shutdown().await;

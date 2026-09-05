@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Keyboard Backlight
+Comment=Uniwill/Eluktronics keyboard backlight tray control
+Exec=uwbl-tray
+Icon=input-keyboard
+Terminal=false
+Categories=Settings;HardwareSettings;
+X-KDE-autostart-after=panel
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
