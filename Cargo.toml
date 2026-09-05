@@ -23,7 +23,7 @@ clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "signal", "fs", "io-util", "net"] }
 zbus = { version = "5", default-features = false, features = ["tokio"] }
 futures-util = "0.3"
-ksni = "0.2"
+ksni = { version = "0.3", default-features = false, features = ["tokio"] }
 
 [profile.release]
 lto = true
