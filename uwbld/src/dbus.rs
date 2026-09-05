@@ -12,7 +12,7 @@ use uwbl_core::{EffectKind, FanMode, PowerSource, Profile, Rgb, Status};
 use zbus::fdo;
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
-use zbus::zvariant::{OwnedValue, Value};
+use zbus::zvariant::Value;
 use zbus::{interface, proxy, Connection};
 
 use crate::Shared;
@@ -346,7 +346,7 @@ mod polkit {
             details: HashMap<&str, &str>,
             flags: u32,
             cancellation_id: &str,
-        ) -> zbus::Result<(bool, bool, HashMap<String, OwnedValue>)>;
+        ) -> zbus::Result<(bool, bool, HashMap<String, String>)>;
     }
 
     const ALLOW_USER_INTERACTION: u32 = 1;

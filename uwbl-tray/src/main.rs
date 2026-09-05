@@ -1,6 +1,6 @@
 //! `uwbl-tray` – StatusNotifierItem (KDE/Plasma, and any SNI host) for `uwbld`.
 //!
-//! Left click toggles the backlight, mouse wheel changes brightness, the menu exposes
+//! Left click opens the menu, middle click toggles the backlight, mouse wheel changes brightness, the menu exposes
 //! brightness / colour / effect / speed / fan controls. The icon is a swatch of the current
 //! colour so the tray reflects the keyboard at a glance.
 
@@ -52,6 +52,9 @@ impl Tray {
 const SPEEDS: [u8; 5] = [1, 3, 5, 7, 10];
 
 impl ksni::Tray for Tray {
+    /// Left click opens the menu (Plasma convention); middle click toggles the backlight.
+    const MENU_ON_ACTIVATE: bool = true;
+
     fn id(&self) -> String {
         "uwbl-tray".into()
     }
@@ -107,7 +110,7 @@ impl ksni::Tray for Tray {
         }
     }
 
-    fn activate(&mut self, _x: i32, _y: i32) {
+    fn secondary_activate(&mut self, _x: i32, _y: i32) {
         if let Some(s) = &self.status {
             self.send(Cmd::Enabled(!s.enabled));
         }
