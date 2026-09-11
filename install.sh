@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install uwbl: kernel module (DKMS), daemon, CLI, tray and system integration files.
+# Install omarchy-eluktonics-keyboard: kernel module, daemon, CLI and integration files.
 # Run from the repository root:  sudo ./install.sh
 set -euo pipefail
 
@@ -30,14 +30,14 @@ if [[ $SKIP_BUILD == 0 ]]; then
         (cd "$HERE" && bash -c "$BUILD_CMD")
     fi
 fi
-for bin in uwbld uwbl uwbl-tray; do
+for bin in uwbld omarchy-eluktonics-keyboard; do
     [[ -x "$HERE/target/release/$bin" ]] || { echo "missing target/release/$bin (run cargo build --release)" >&2; exit 1; }
 done
 
 log "installing binaries to $PREFIX/bin"
 install -Dm755 "$HERE/target/release/uwbld" "$PREFIX/bin/uwbld"
-install -Dm755 "$HERE/target/release/uwbl" "$PREFIX/bin/uwbl"
-install -Dm755 "$HERE/target/release/uwbl-tray" "$PREFIX/bin/uwbl-tray"
+install -Dm755 "$HERE/target/release/omarchy-eluktonics-keyboard" \
+    "$PREFIX/bin/omarchy-eluktonics-keyboard"
 
 # --- 2. system integration --------------------------------------------------------------------
 log "installing systemd / D-Bus / polkit / udev files"
@@ -47,8 +47,6 @@ install -Dm644 "$HERE/packaging/polkit/org.uniwill.backlight1.policy" "$PREFIX/s
 install -Dm644 "$HERE/packaging/udev/99-uwbl.rules" /etc/udev/rules.d/99-uwbl.rules
 install -Dm644 "$HERE/packaging/modprobe/uniwill-laptop-uwbl.conf" /etc/modprobe.d/uniwill-laptop-uwbl.conf
 install -Dm644 "$HERE/packaging/modules-load.conf" /etc/modules-load.d/uniwill-laptop-uwbl.conf
-install -Dm644 "$HERE/packaging/autostart/uwbl-tray.desktop" /etc/xdg/autostart/uwbl-tray.desktop
-install -Dm644 "$HERE/packaging/autostart/uwbl-tray.desktop" "$PREFIX/share/applications/uwbl-tray.desktop"
 if [[ ! -e /etc/uwbl/config.toml ]]; then
     install -Dm644 "$HERE/packaging/config.toml" /etc/uwbl/config.toml
 else
@@ -58,7 +56,7 @@ fi
 # --- 3. kernel module via DKMS ----------------------------------------------------------------
 if [[ $SKIP_KERNEL == 0 ]]; then
     if ! command -v dkms >/dev/null; then
-        echo "dkms not found: sudo apt install dkms linux-headers-\$(uname -r)" >&2
+        echo "dkms not found: install dkms and the headers for the running kernel" >&2
         exit 1
     fi
     log "installing kernel module $DKMS_NAME/$DKMS_VER via DKMS"
@@ -94,10 +92,10 @@ if ls /sys/class/leds/*kbd_backlight* >/dev/null 2>&1; then
     sleep 1
     systemctl --no-pager --lines=5 status uwbld.service || true
     echo
-    uwbl status || true
+    omarchy-eluktonics-keyboard status || true
 else
     echo "no kbd_backlight LED found yet; uwbld will start automatically once the module creates it." >&2
     echo "run 'sudo ./scripts/probe.sh' to diagnose." >&2
 fi
 
-log "done. Start the tray now with: uwbl-tray & (it autostarts on next login)"
+log "done. Enable the shell controls with: omarchy plugin enable michaelkamau.eluktronics-keyboard"

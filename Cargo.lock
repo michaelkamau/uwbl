@@ -460,19 +460,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ksni"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "814b44c24cd2cb236c3b8a41c7f08237b452a8e76ecaa81f1cec40b5b678215b"
-dependencies = [
- "futures-util",
- "pastey",
- "serde",
- "tokio",
- "zbus",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.189"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -517,6 +504,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "omarchy-eluktonics-keyboard"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "futures-util",
+ "serde_json",
+ "tokio",
+ "uwbl-core",
+ "uwbl-dbus",
+ "zbus",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -543,12 +544,6 @@ name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
-
-[[package]]
-name = "pastey"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ee67f1008b1ba2321834326597b8e186293b049a023cdef258527550b9935b4"
 
 [[package]]
 name = "pin-project-lite"
@@ -967,20 +962,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "uwbl"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "futures-util",
- "serde_json",
- "tokio",
- "uwbl-core",
- "uwbl-dbus",
- "zbus",
-]
-
-[[package]]
 name = "uwbl-core"
 version = "0.1.0"
 dependencies = [
@@ -997,23 +978,6 @@ version = "0.1.0"
 dependencies = [
  "serde_json",
  "uwbl-core",
- "zbus",
-]
-
-[[package]]
-name = "uwbl-tray"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "env_logger",
- "futures-util",
- "ksni",
- "log",
- "serde",
- "serde_json",
- "tokio",
- "uwbl-core",
- "uwbl-dbus",
  "zbus",
 ]
 

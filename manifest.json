@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "michaelkamau.eluktronics-keyboard",
+  "name": "Eluktronics Keyboard",
+  "version": "0.1.0",
+  "author": "Michael Kamau",
+  "license": "GPL-2.0-only",
+  "description": "RGB keyboard controls for the Eluktronics RP-17",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Eluktronics Keyboard",
+    "description": "Toggle and configure the RP-17 keyboard backlight",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

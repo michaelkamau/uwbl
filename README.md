@@ -1,18 +1,17 @@
-# uwbl – keyboard backlight & fan control for the Eluktronics RP-17 on Linux
+# omarchy-eluktonics-keyboard
 
-A Linux port of the parts of the Windows **Eluktronics Control Center** (Uniwill
-GamingCenter 1.1.0.55) that matter on the RP-17: the single-zone RGB keyboard
-backlight (colour, 4 brightness levels, effects) and the fan mode (Gaming /
-Beast, fan boost). It should also work on other Uniwill/Tongfang GK7NXXR boards
-that use the same embedded controller.
+An Omarchy plugin and command-line app for the Eluktronics RP-17 single-zone
+RGB keyboard. It provides quick controls for power, four brightness levels,
+colour presets, and static, breathing, cycle, and rainbow effects.
 
-
-![ubwl-tray](images/keyboard-tray.png)
+The hardware backend is adapted from
+[uwbl](https://github.com/michaelkamau/uwbl), including its RP-17
+`uniwill-laptop` DKMS driver and system daemon.
 
 ```
 ┌────────────┐  D-Bus (system)  ┌──────────┐  sysfs LED / platform_profile  ┌──────────────────┐
-│ uwbl (CLI) │─────────────────▶│  uwbld   │───────────────────────────────▶│ uniwill-laptop.ko│─▶ EC
-│ uwbl-tray  │◀─────────────────│ (daemon) │                                │  (patched, DKMS) │
+│ Omarchy bar plugin / CLI      │──▶│  uwbld   │───────────────────────────▶│ uniwill-laptop.ko│─▶ EC
+│ omarchy-eluktonics-keyboard   │◀──│ (daemon) │                            │  (patched, DKMS) │
 └────────────┘  StatusChanged   └──────────┘                                └──────────────────┘
 ```
 
@@ -21,25 +20,32 @@ that use the same embedded controller.
 | `kernel/uniwill-laptop/` | Mainline `uniwill-laptop` driver + RP-17 DMI entry, `platform_profile` fan mode and `fan_boost` attribute. Installed with DKMS, shadows the (older) in-tree module. |
 | `uwbl-core` | Library: sysfs backend, colour model, software effects (breathing / cycle / rainbow), TOML config, AC/battery profiles, controller. Fully unit-tested against a fake backend. |
 | `uwbld` | Root daemon: owns the LED, applies the profile for the current power source, runs effects at ≤15 fps, re-applies after resume, follows the Fn brightness keys, optional idle-off, persists changes. Exposes `org.uniwill.Backlight1` on the system bus (polkit-protected). |
-| `uwbl` | CLI client (`uwbl status|on|off|brightness|color|effect|speed|fan|boost|profile|watch`, `--json`). |
-| `uwbl-tray` | KDE/Plasma tray icon (StatusNotifierItem): colour swatch icon, click to toggle, wheel for brightness, menu for everything else. Autostarts. |
+| `omarchy-eluktonics-keyboard` | CLI client used directly and by the shell plugin. |
+| `Panel.qml` / `manifest.json` | Native Omarchy bar widget and popup controls. |
 | `docs/` | Reverse-engineering notes from the Windows package, hardware probe template. |
 | `reference/` | The original Windows installer (not needed at runtime). |
 
 ## Install
 
-Requirements: KDE neon / Ubuntu 24.04-ish, kernel headers, `dkms`, Rust toolchain (`rustup`).
+This plugin targets Omarchy on the Eluktronics RP-17. Install the build
+dependencies first:
 
-```sh
-sudo apt install dkms build-essential linux-headers-$(uname -r)
-git clone https://github.com/michaelkamau/backlight-driver && cd backlight-driver
-sudo ./install.sh          # builds, installs DKMS module, daemon, CLI, tray, systemd/D-Bus/polkit files
-uwbl-tray &                # tray now; it autostarts on the next login
+```bash
+omarchy pkg add base-devel dkms linux-headers rust
+omarchy plugin add https://github.com/michaelkamau/omarchy-eluktonics-keyboard --enable
+cd ~/.config/omarchy/plugins/michaelkamau.eluktronics-keyboard
+sudo ./install.sh
 ```
 
 `install.sh` honours `SKIP_KERNEL=1` (don't touch the kernel module) and
 `SKIP_BUILD=1` (use existing `target/release` binaries). `sudo ./uninstall.sh [--purge]`
 removes everything.
+
+For development from this checkout, validate the shell plugin with:
+
+```bash
+omarchy plugin validate .
+```
 
 ### First run on new hardware
 
@@ -58,21 +64,19 @@ If the module refuses to load with "unsupported device", uncomment
 ## Usage
 
 ```sh
-uwbl                         # status
-uwbl color blue              # static colour (#rrggbb, r,g,b or a preset – see `uwbl colors`)
-uwbl brightness 4            # 0–4, or up / down
-uwbl effect breathing -s 7   # static | breathing | cycle | rainbow, speed 1–10
-uwbl cycle red white blue    # colours for the cycle effect
-uwbl fan performance         # balanced (Gaming) | performance (Beast)
-uwbl boost on
-uwbl profile show            # AC and battery profiles
-uwbl profile copy            # AC -> battery
-uwbl profile set battery '{"enabled":false}'
-uwbl reset                   # back to /etc/uwbl/config.toml
-uwbl watch --json            # stream changes
+omarchy-eluktonics-keyboard                         # status
+omarchy-eluktonics-keyboard color blue              # preset, #rrggbb, or r,g,b
+omarchy-eluktonics-keyboard brightness 4            # 0–4, up, or down
+omarchy-eluktonics-keyboard effect breathing -s 7   # effect and speed 1–10
+omarchy-eluktonics-keyboard cycle red white blue
+omarchy-eluktonics-keyboard fan performance
+omarchy-eluktonics-keyboard boost on
+omarchy-eluktonics-keyboard profile show
+omarchy-eluktonics-keyboard reset
+omarchy-eluktonics-keyboard watch --json
 ```
 
-Changes made through the CLI/tray apply to the profile of the **current power
+Changes made through the CLI/plugin apply to the profile of the **current power
 source** and are persisted in `/var/lib/uwbld/state.toml`. Defaults live in
 `/etc/uwbl/config.toml` (`uwbld --print-config` prints a commented example):
 
@@ -97,8 +101,8 @@ enabled = false            # Windows default: DCLight = 0
 
 The Fn brightness keys keep working through the kernel driver; the daemon notices
 (`brightness_hw_changed`) and updates the profile so the level survives a reboot.
-KDE's on-screen brightness display works because the LED is a standard
-`kbd_backlight` device.
+The Fn brightness keys continue to work because the LED is exposed as a
+standard `kbd_backlight` device.
 
 ### D-Bus API
 
@@ -118,8 +122,7 @@ busctl get-property org.uniwill.Backlight1 /org/uniwill/Backlight1 org.uniwill.B
 cargo test --workspace && cargo clippy --workspace --all-targets
 # run everything unprivileged with a fake backend on the session bus:
 cargo run -p uwbld -- --fake --session-bus --config /tmp/c.toml --state /tmp/s.toml &
-UWBL_SESSION_BUS=1 cargo run -p uwbl -- effect rainbow
-UWBL_SESSION_BUS=1 cargo run -p uwbl-tray
+UWBL_SESSION_BUS=1 cargo run -p omarchy-eluktonics-keyboard -- effect rainbow
 # kernel module only:
 make -C kernel/uniwill-laptop
 ```

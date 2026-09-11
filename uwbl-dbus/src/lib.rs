@@ -1,4 +1,4 @@
-//! D-Bus contract shared by `uwbld` (server) and `uwbl`/`uwbl-tray` (clients).
+//! D-Bus contract shared by `uwbld` and `omarchy-eluktonics-keyboard`.
 //!
 //! Interface `org.uniwill.Backlight1` on the **system** bus:
 //!

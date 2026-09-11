@@ -1,5 +1,5 @@
 # uwbld configuration. Values here are the defaults; runtime changes made through
-# `uwbl` or the tray are stored separately in /var/lib/uwbld/state.toml.
+# the CLI or Omarchy plugin are stored separately in /var/lib/uwbld/state.toml.
 # Colours accept "#rrggbb", "r,g,b" or preset names (red, orange, yellow, green,
 # blue, cyan, violet, white, ...). Effects: static, breathing, cycle, rainbow.
 # Fan modes: balanced (Gaming) or performance (Beast).

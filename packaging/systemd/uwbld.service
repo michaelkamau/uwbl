@@ -1,6 +1,6 @@
 [Unit]
 Description=Uniwill/Eluktronics keyboard backlight and fan mode daemon
-Documentation=https://github.com/michaelkamau/backlight-driver
+Documentation=https://github.com/michaelkamau/omarchy-eluktonics-keyboard
 After=systemd-modules-load.service dbus.service
 Wants=dbus.service
 # Wait until the kernel module has created the LED (udev rule triggers this unit too).

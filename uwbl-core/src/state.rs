@@ -46,7 +46,7 @@ impl State {
     }
 }
 
-/// Point-in-time view of the whole system, as returned by `uwbl status` and the D-Bus API.
+/// Point-in-time view returned by the CLI and D-Bus API.
 /// Serialised as JSON for `--json` and the D-Bus `GetStatus` method.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Status {

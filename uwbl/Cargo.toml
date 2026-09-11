@@ -1,6 +1,6 @@
 [package]
-name = "uwbl"
-description = "CLI for the uwbld keyboard backlight daemon"
+name = "omarchy-eluktonics-keyboard"
+description = "CLI for the Eluktronics RP-17 keyboard RGB daemon"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

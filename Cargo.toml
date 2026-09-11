@@ -1,12 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["uwbl-core", "uwbl-dbus", "uwbld", "uwbl", "uwbl-tray"]
+members = ["uwbl-core", "uwbl-dbus", "uwbld", "uwbl"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "GPL-2.0-only"
-repository = "https://github.com/michaelkamau/backlight-driver"
+repository = "https://github.com/michaelkamau/omarchy-eluktonics-keyboard"
 authors = ["Michael Kamau"]
 
 [workspace.dependencies]
@@ -23,8 +23,6 @@ clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "signal", "fs", "io-util", "net"] }
 zbus = { version = "5", default-features = false, features = ["tokio"] }
 futures-util = "0.3"
-ksni = { version = "0.3", default-features = false, features = ["tokio"] }
-
 [profile.release]
 lto = true
 codegen-units = 1

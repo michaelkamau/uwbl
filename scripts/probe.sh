@@ -72,7 +72,7 @@ done
 
 section "uwbld"
 run systemctl --no-pager --lines=10 status uwbld.service
-run uwbl status
+run omarchy-eluktonics-keyboard status
 
 if [[ ${1:-} == --test ]]; then
     section "Live test"

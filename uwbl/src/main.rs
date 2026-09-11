@@ -1,4 +1,4 @@
-//! `uwbl` – command-line client for `uwbld`.
+//! `omarchy-eluktonics-keyboard` – command-line client for the keyboard RGB daemon.
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
@@ -6,10 +6,7 @@ use futures_util::StreamExt;
 use uwbl_core::{PowerSource, Profile, Status};
 
 #[derive(Parser, Debug)]
-#[command(
-    version,
-    about = "Control the Uniwill/Eluktronics keyboard backlight and fan mode"
-)]
+#[command(version, about = "Control the Eluktronics RP-17 keyboard RGB lighting")]
 struct Cli {
     /// Machine-readable JSON output.
     #[arg(long, global = true)]
@@ -30,7 +27,7 @@ enum Cmd {
     Toggle,
     /// Set brightness 0-4 (0 = off), or `up` / `down`.
     Brightness { level: String },
-    /// Set a static colour: `#rrggbb`, `r,g,b` or a preset name (see `uwbl colors`).
+    /// Set a static colour: `#rrggbb`, `r,g,b` or a preset name (see `colors`).
     Color { color: String },
     /// Set the effect: static, breathing, cycle, rainbow.
     Effect {
@@ -90,7 +87,7 @@ async fn main() -> Result<()> {
 
     let proxy = uwbl_dbus::connect()
         .await
-        .context("connecting to uwbld – is the service running? (systemctl status uwbld)")?;
+        .context("connecting to the keyboard daemon - is uwbld.service running?")?;
 
     match cli.cmd.unwrap_or(Cmd::Status) {
         Cmd::Status => {}

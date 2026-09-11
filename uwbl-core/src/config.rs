@@ -286,7 +286,7 @@ pub fn example_config() -> String {
     c.profiles.ac.fan_mode = Some(FanMode::Balanced);
     format!(
         "# uwbld configuration. Values here are the defaults; runtime changes made through\n\
-         # `uwbl` or the tray are stored separately in {DEFAULT_STATE_PATH}.\n\
+         # CLI or Omarchy plugin changes are stored separately in {DEFAULT_STATE_PATH}.\n\
          # Colours accept \"#rrggbb\", \"r,g,b\" or preset names (red, orange, yellow, green,\n\
          # blue, cyan, violet, white, ...). Effects: static, breathing, cycle, rainbow.\n\
          # Fan modes: balanced (Gaming) or performance (Beast).\n\n{}",
