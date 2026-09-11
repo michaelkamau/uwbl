@@ -105,6 +105,9 @@ Panel {
     onTriggered: root.refresh()
   }
 
+  implicitWidth: button.implicitWidth
+  implicitHeight: button.implicitHeight
+
   BarIconButton {
     id: button
     anchors.fill: parent
