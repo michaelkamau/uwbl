@@ -49,8 +49,9 @@ omarchy plugin validate .
 
 ### First run on new hardware
 
-The kernel module has been built but **not yet verified on a live RP-17** (see
-[docs/hardware-probe.md](docs/hardware-probe.md)). After installing, run
+The keyboard and EC resume-recovery path have been exercised on a live RP-17;
+the remaining hardware checklist is in
+[docs/hardware-probe.md](docs/hardware-probe.md). After installing on new hardware, run
 
 ```sh
 sudo ./scripts/probe.sh --test
@@ -103,6 +104,19 @@ The Fn brightness keys keep working through the kernel driver; the daemon notice
 (`brightness_hw_changed`) and updates the profile so the level survives a reboot.
 The Fn brightness keys continue to work because the LED is exposed as a
 standard `kbd_backlight` device.
+
+### Backlight unresponsive after sleep
+
+Check `systemctl status uwbld` and `journalctl -b -k -g uniwill`. On the RP-17,
+the firmware can lose its EC memory window during suspend: the daemon stays
+running, but writes have no effect and hwmon reports impossible temperatures
+and fan speeds. Kernel module version 0.1.1 adds a model-specific WMI fallback
+before restoring hardware state. Rebuild/install the kernel module, not just
+the daemon; see [kernel recovery notes](kernel/uniwill-laptop/README.md#rp-17-resume-recovery).
+
+Separately, the default battery profile is **off**. To keep lighting enabled
+when unplugged, run `omarchy-eluktonics-keyboard profile set battery '{"enabled":true}'`.
+This preference is saved and used on subsequent resumes.
 
 ### D-Bus API
 

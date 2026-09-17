@@ -346,6 +346,9 @@
  */
 #define UNIWILL_EC_DELAY_US	6000
 
+/* Out-of-tree addition: RP-17 firmware's EC mailbox, independent of ECRR/ECRW MMIO. */
+#define UNIWILL_EC_WMI_GUID	"ABBC0F6F-8EA1-11D1-00A0-C90629100000"
+
 #define PWM_MAX			200
 #define FAN_TABLE_LENGTH	16
 
@@ -383,6 +386,8 @@ struct uniwill_data {
 	struct device *dev;
 	acpi_handle handle;
 	struct regmap *regmap;
+	bool ec_use_wmi;
+	struct mutex ec_wmi_lock;
 	unsigned int features;
 	u8 project_id;
 	struct acpi_battery_hook hook;
@@ -433,6 +438,7 @@ struct uniwill_battery_entry {
 
 struct uniwill_device_descriptor {
 	unsigned int features;
+	bool ec_wmi_fallback;
 	bool kbd_led_single_color;
 	u8 kbd_led_max_brightness;
 	u8 lightbar_max_brightness;
@@ -527,6 +533,48 @@ static inline bool uniwill_device_supports_any(const struct uniwill_data *data,
 	return data->features & features;
 }
 
+/*
+ * Out-of-tree addition: the RP-17 can lose its 0xfe200000 EC memory window
+ * after S3. Its WMBC method 4 uses the ACPI EC mailbox instead. On this firmware
+ * reads return the value in byte 0 (not byte 2 as on newer Uniwill machines).
+ */
+static int uniwill_ec_wmi_xfer(struct uniwill_data *data, unsigned int reg,
+			     unsigned int *val, bool write)
+{
+	u8 request[40] = { reg & 0xff, reg >> 8 };
+	struct acpi_buffer input = { sizeof(request), request };
+	struct acpi_buffer output = { ACPI_ALLOCATE_BUFFER, NULL };
+	union acpi_object *obj;
+	acpi_status status;
+	int ret = -EIO;
+
+	guard(mutex)(&data->ec_wmi_lock);
+
+	if (write)
+		request[2] = *val;
+	else
+		request[5] = 1;
+
+	status = wmi_evaluate_method(UNIWILL_EC_WMI_GUID, 0, 4, &input, &output);
+	obj = output.pointer;
+	if (ACPI_FAILURE(status) || !obj || obj->type != ACPI_TYPE_BUFFER ||
+	    obj->buffer.length < 8)
+		goto out;
+
+	if (!memcmp(obj->buffer.pointer, "\xfe\xfe\xfe\xfe", 4))
+		goto out;
+
+	if (!write)
+		*val = obj->buffer.pointer[0];
+	ret = 0;
+out:
+	kfree(obj);
+	if (ret)
+		dev_err_ratelimited(data->dev, "WMI EC %s failed at %#x\n",
+				    write ? "write" : "read", reg);
+	return ret;
+}
+
 static int uniwill_ec_reg_write(void *context, unsigned int reg, unsigned int val)
 {
 	union acpi_object params[2] = {
@@ -549,6 +597,9 @@ static int uniwill_ec_reg_write(void *context, unsigned int reg, unsigned int va
 		.pointer = params,
 	};
 	acpi_status status;
+
+	if (READ_ONCE(data->ec_use_wmi))
+		return uniwill_ec_wmi_xfer(data, reg, &val, true);
 
 	status = acpi_evaluate_object(data->handle, "ECRW", &input, NULL);
 	if (ACPI_FAILURE(status))
@@ -577,6 +628,9 @@ static int uniwill_ec_reg_read(void *context, unsigned int reg, unsigned int *va
 	unsigned long long output;
 	acpi_status status;
 
+	if (READ_ONCE(data->ec_use_wmi))
+		return uniwill_ec_wmi_xfer(data, reg, val, false);
+
 	status = acpi_evaluate_integer(data->handle, "ECRR", &input, &output);
 	if (ACPI_FAILURE(status))
 		return -EIO;
@@ -588,6 +642,33 @@ static int uniwill_ec_reg_read(void *context, unsigned int reg, unsigned int *va
 
 	*val = output;
 
+	return 0;
+}
+
+static int uniwill_ec_check_transport(struct uniwill_data *data)
+{
+	unsigned int value;
+	int ret;
+
+	if (!device_descriptor.ec_wmi_fallback || READ_ONCE(data->ec_use_wmi))
+		return 0;
+
+	/* Bypass regcache: the project ID must not be 0xff on the RP-17. */
+	ret = uniwill_ec_reg_read(data, EC_ADDR_PROJECT_ID, &value);
+	if (!ret && value != U8_MAX)
+		return 0;
+
+	if (!wmi_has_guid(UNIWILL_EC_WMI_GUID))
+		return dev_err_probe(data->dev, -ENODEV, "EC unavailable; no WMI mailbox\n");
+
+	ret = uniwill_ec_wmi_xfer(data, EC_ADDR_PROJECT_ID, &value, false);
+	if (ret)
+		return ret;
+	if (value == U8_MAX)
+		return dev_err_probe(data->dev, -EIO, "EC project ID invalid over WMI too\n");
+
+	WRITE_ONCE(data->ec_use_wmi, true);
+	dev_warn(data->dev, "EC memory window unavailable; using WMI mailbox\n");
 	return 0;
 }
 
@@ -2494,6 +2575,14 @@ static int uniwill_probe(struct platform_device *pdev)
 
 	data->regmap = regmap;
 
+	ret = devm_mutex_init(&pdev->dev, &data->ec_wmi_lock);
+	if (ret < 0)
+		return ret;
+
+	ret = uniwill_ec_check_transport(data);
+	if (ret < 0)
+		return ret;
+
 	ret = devm_mutex_init(&pdev->dev, &data->super_key_lock);
 	if (ret < 0)
 		return ret;
@@ -2779,6 +2868,10 @@ static int uniwill_resume(struct device *dev)
 
 	regcache_cache_only(data->regmap, false);
 
+	ret = uniwill_ec_check_transport(data);
+	if (ret < 0)
+		return ret;
+
 	ret = regcache_sync(data->regmap);
 	if (ret < 0)
 		return ret;
@@ -2842,6 +2935,7 @@ static struct platform_driver uniwill_driver = {
  * Single-zone RGB keyboard backlight controlled through the EC, 5 brightness levels.
  */
 static struct uniwill_device_descriptor eluktronics_rp17_descriptor __initdata = {
+	.ec_wmi_fallback = true,
 	.features = UNIWILL_FEATURE_FN_LOCK |
 		    UNIWILL_FEATURE_SUPER_KEY |
 		    UNIWILL_FEATURE_BATTERY_CHARGE_MODES |
